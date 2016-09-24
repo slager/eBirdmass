@@ -130,7 +130,8 @@ ui <- fluidPage(
       actionButton("do", "Calculate"),
       tags$br(),
       tags$br(),
-      p(tags$a(href="https://github.com/slager/eBirdmass", "R code", target="_blank")," by ",tags$a(href="https://twitter.com/dlslager", "Dave Slager", target="_blank"))
+      p(tags$a(href="https://github.com/slager/eBirdmass", "R code", target="_blank")," by ",tags$a(href="https://twitter.com/dlslager", "Dave Slager", target="_blank")),
+      p("Masses",tags$a(href="https://www.amazon.com/Sibley-Guide-Birds-David-Allen/dp/0679451226","(Sibley 2000)", target="_blank"),"transcribed by Sean Fitzgerald")
     )),
     column(6,
            h5(htmlOutput("mySite")),
@@ -139,9 +140,8 @@ ui <- fluidPage(
            h5(htmlOutput("nins")),
            h5(htmlOutput("metric")),
            h5(htmlOutput("english")),
-           h5(htmlOutput("pennies")),
-           #verbatimTextOutput("text"),
-           p("Masses",tags$a(href="https://www.amazon.com/Sibley-Guide-Birds-David-Allen/dp/0679451226","(Sibley 2000)", target="_blank"),"transcribed by Sean Fitzgerald")
+           h5(htmlOutput("pennies"))
+           #verbatimTextOutput("text")
     )
   )
 )
@@ -166,7 +166,7 @@ server <- function(input, output){
     tags$a(href = maketablereactive()[['URL']], maketablereactive()[['title']], target="_blank")})
 
   output$coerceX <- renderUI({
-    tags$p(style="color:red",ifelse(maketablereactive()[['ifX']],"Xs were coerced to 1s",""))
+    tags$p(style="color:red",ifelse(maketablereactive()[['ifX']],"Warning: Xs were coerced to 1s",""))
   })
   
   output$nins <- renderUI({
@@ -195,29 +195,29 @@ server <- function(input, output){
     tags$p(paste0("$",format(round(maketablereactive()[['tm']]/2.5*.01, 2), nsmall = 2, big.mark=",")," in pennies"))
   })
   
-  output$text <- renderText({
-    paste0(
-          ifelse(maketablereactive()[['ifX']],"Xs were coerced to 1s\n\n",""),
-          format(maketablereactive()[['ni']],big.mark=","),
-          " individuals\n",
-          maketablereactive()[['ns']],
-          " taxa\n\n",
-          format(round(maketablereactive()[['tm']],1),trim=T,big.mark=",",nsmall=1,drop0trailing=T),
-          " grams\n",
-          format(round(maketablereactive()[['tm']]/1000,1),trim=T,big.mark=",",nsmall=1,drop0trailing=T),
-          " kg\n",
-          format(round(maketablereactive()[['tm']]/1e6,1),trim=T,big.mark=",",nsmall=1,drop0trailing=T),
-          " metric tonnes\n\n",
-          format(round(maketablereactive()[['tm']]*0.035274,1),trim=T,big.mark=",",nsmall=1,drop0trailing=T),
-          " oz\n",    
-          format(round(maketablereactive()[['tm']]*0.00220462,1),trim=T,big.mark=",",nsmall=1,drop0trailing=T),
-          " lb\n",    
-          format(round(maketablereactive()[['tm']]*1.10231e-6,1),trim=T,big.mark=",",nsmall=1,drop0trailing=T),
-          " tons\n\n",
-          "$",format(round(maketablereactive()[['tm']]/2.5*.01, 2), nsmall = 2, big.mark=","),
-          " in pennies"
-          )
-  })
+  # output$text <- renderText({
+  #   paste0(
+  #         ifelse(maketablereactive()[['ifX']],"Xs were coerced to 1s\n\n",""),
+  #         format(maketablereactive()[['ni']],big.mark=","),
+  #         " individuals\n",
+  #         maketablereactive()[['ns']],
+  #         " taxa\n\n",
+  #         format(round(maketablereactive()[['tm']],1),trim=T,big.mark=",",nsmall=1,drop0trailing=T),
+  #         " grams\n",
+  #         format(round(maketablereactive()[['tm']]/1000,1),trim=T,big.mark=",",nsmall=1,drop0trailing=T),
+  #         " kg\n",
+  #         format(round(maketablereactive()[['tm']]/1e6,1),trim=T,big.mark=",",nsmall=1,drop0trailing=T),
+  #         " metric tonnes\n\n",
+  #         format(round(maketablereactive()[['tm']]*0.035274,1),trim=T,big.mark=",",nsmall=1,drop0trailing=T),
+  #         " oz\n",    
+  #         format(round(maketablereactive()[['tm']]*0.00220462,1),trim=T,big.mark=",",nsmall=1,drop0trailing=T),
+  #         " lb\n",    
+  #         format(round(maketablereactive()[['tm']]*1.10231e-6,1),trim=T,big.mark=",",nsmall=1,drop0trailing=T),
+  #         " tons\n\n",
+  #         "$",format(round(maketablereactive()[['tm']]/2.5*.01, 2), nsmall = 2, big.mark=","),
+  #         " in pennies"
+  #         )
+  # })
   
 }
 
