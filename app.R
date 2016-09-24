@@ -92,10 +92,17 @@ maketable <- function(x){
   read.csv("masses_tax2016.csv",header=T,stringsAsFactors=F,na.strings=c("","NA")) -> m
   
   #Add mass & masscomm to data frame, using SPECIES_CODE
-  sapply(d$GET_MASS_CODE,function(x){m[which(m$SPECIES_CODE==x),'mass']}) -> d$mass
-  sapply(d$GET_MASS_CODE,function(x){m[which(m$SPECIES_CODE==x),'masscomm']}) -> d$masscomm
+  sapply(d$GET_MASS_CODE,function(x){
+    ifelse(x %in% m$SPECIES_CODE,m[which(m$SPECIES_CODE==x),'mass'],NA)
+    }) -> d$mass
+  sapply(d$GET_MASS_CODE,function(x){
+    ifelse(x %in% m$SPECIES_CODE,m[which(m$SPECIES_CODE==x),'masscomm'],NA)
+    }) -> d$masscomm
   "" -> d$masscomm[which(is.na(d$masscomm))]
   
+  #Pretty handling of unmatched (NA) masses
+  sum(is.na(d$mass)) -> countNAmass
+    
   #Get subtotal per species
   d$count * d$mass -> d$subtotal
   
@@ -119,7 +126,7 @@ maketable <- function(x){
   sum(na.omit(d$subtotal)) -> tm
   length(d$com1) -> ns
   
-  return(list('title'=title,'URL'=URL,'tm'=tm,'ni'=ni,'ns'=ns,'ifX'=ifX,'f'=f))
+  return(list('countNAmass'=countNAmass,'title'=title,'URL'=URL,'tm'=tm,'ni'=ni,'ns'=ns,'ifX'=ifX,'f'=f))
 }
 
 ui <- fluidPage(
@@ -137,6 +144,7 @@ ui <- fluidPage(
            h5(htmlOutput("mySite")),
            DT::dataTableOutput("table"),
            h5(htmlOutput("coerceX")),
+           h5(htmlOutput("massNA")),
            h5(htmlOutput("nins")),
            h5(htmlOutput("metric")),
            h5(htmlOutput("english")),
@@ -165,6 +173,10 @@ server <- function(input, output){
   output$mySite <- renderUI({
     tags$a(href = maketablereactive()[['URL']], maketablereactive()[['title']], target="_blank")})
 
+  output$massNA <- renderUI({
+    tags$p(style="color:red",ifelse(maketablereactive()[['countNAmass']]>0,paste0("Warning: Mass=NA for ",maketablereactive()[['countNAmass']]," taxa"),""))
+  })
+  
   output$coerceX <- renderUI({
     tags$p(style="color:red",ifelse(maketablereactive()[['ifX']],"Warning: Xs were coerced to 1s",""))
   })
