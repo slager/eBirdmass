@@ -1,6 +1,7 @@
 library(shiny)
 library(rvest)
 library(httr)
+library(DT)
 
 ## Define function to scrape, calculate, and generate output data
 maketable <- function(x){
@@ -97,15 +98,19 @@ maketable <- function(x){
   d$count * d$mass -> d$subtotal
   
   #Get percent breakdown by mass
-  d$subtotal/sum(na.omit(d$subtotal))*100 -> d$pm
-  sprintf("%1.2f%%", d$pm) -> d$pm
+  #d$subtotal/sum(na.omit(d$subtotal))*100 -> d$pm
+  d$subtotal/sum(na.omit(d$subtotal)) -> d$pm
+  #sprintf("%1.2f%%", d$pm) -> d$pm
   
   #Get percent breakdown by count
-  d$count/sum(na.omit(d$count))*100 -> d$pc
-  sprintf("%1.2f%%", d$pc) -> d$pc
-    
+  #d$count/sum(na.omit(d$count))*100 -> d$pc
+  d$count/sum(na.omit(d$count)) -> d$pc
+  #sprintf("%1.2f%%", d$pc) -> d$pc
+  
   ## Construct final data frame
-  f <- data.frame(stringsAsFactors=F,taxon=d$com1,count=format(d$count,big.mark=","),count.p=d$pc,unit.g=format(round(d$mass,1),trim=F,big.mark=",",nsmall=1,drop0trailing=T),subtotal.g=format(round(d$subtotal,1),trim=T,big.mark=",",nsmall=1,drop0trailing=T),mass.p=d$pm,note=d$masscomm)
+  #f <- data.frame(stringsAsFactors=F,taxon=d$com1,count=format(d$count,big.mark=","),count.p=d$pc,unit.g=format(round(d$mass,1),trim=F,big.mark=",",nsmall=1,drop0trailing=T),subtotal.g=format(round(d$subtotal,1),trim=T,big.mark=",",nsmall=1,drop0trailing=T),mass.p=d$pm,note=d$masscomm)
+  f <- data.frame(stringsAsFactors=F,i=as.numeric(rownames(d)),taxon=d$com1,count=d$count,count.p=d$pc,unit.g=d$mass,subtotal.g=d$subtotal,mass.p=d$pm,note=d$masscomm)
+  
   
   ## Create named list of desired objects here, and extract from result
   sum(d$count) -> ni
@@ -127,7 +132,8 @@ ui <- fluidPage(
     )),
     column(6,
            htmlOutput("mySite"),
-           tableOutput('table'),
+           DT::dataTableOutput("table"),
+           tags$br(),
            verbatimTextOutput("text"),
            p("Masses",tags$a(href="https://www.amazon.com/Sibley-Guide-Birds-David-Allen/dp/0679451226","(Sibley 2000)"),"transcribed by Sean Fitzgerald")
     )
@@ -137,8 +143,18 @@ ui <- fluidPage(
 server <- function(input, output){
     
   eventReactive(input$do,{maketable(input$text)}) -> maketablereactive
-    
-  output$table <- renderTable({maketablereactive()[['f']]},align='lrrrrrl',include.rownames=FALSE)
+
+  output$table <- DT::renderDataTable(DT::datatable({maketablereactive()[['f']]},
+                                                    rownames=FALSE,
+                                                    colnames=c("","Taxon","Count","%Count","Unit(g)","Subtotal(g)","%Mass","Note"),
+                                                    options=list(paging=FALSE,searching=FALSE,info=FALSE)
+                                                    ) %>%
+                                        formatCurrency(columns=c(3,6),currency="",interval=3,mark=",",digits=0) %>%
+                                        formatCurrency(columns=5,currency="",interval=3,mark=",",digits=1) %>%
+                                        formatPercentage(c(4,7), 2)
+                                      )
+      
+  #output$table <- renderTable({maketablereactive()[['f']]},align='lrrrrrl',include.rownames=FALSE)
   
   output$mySite <- renderUI({
     tags$a(href = input$text, "View checklist on eBird.org")})
