@@ -31,6 +31,8 @@ maketable <- function(x){
   
   species<-html_nodes(x=xhtml,css=".se-name") %>% html_text()
   count<-html_nodes(x=xhtml,css=".se-count") %>% html_text()
+  title<-html_nodes(x=xhtml,css="title") %>% html_text()
+  title<-substr(title,19,nchar(title))
   
   ##Grep and trim the species (This longer needed using html_nodes method)
   # grep('class="se-name"',checklist) -> i #grep lines of the common names
@@ -117,25 +119,29 @@ maketable <- function(x){
   sum(na.omit(d$subtotal)) -> tm
   length(d$com1) -> ns
   
-  return(list('tm'=tm,'ni'=ni,'ns'=ns,'ifX'=ifX,'f'=f))
+  return(list('title'=title,'URL'=URL,'tm'=tm,'ni'=ni,'ns'=ns,'ifX'=ifX,'f'=f))
 }
 
 ui <- fluidPage(
-  titlePanel("eBird biomass calculator"),
+  titlePanel("eBird Biomass Calculator"),
   fluidRow(
     column(3, wellPanel(
-      textInput("text", "eBird checklist URL:", ""),
+      textInput("text", "eBird Checklist URL:", ""),
       actionButton("do", "Calculate"),
       tags$br(),
       tags$br(),
-      p(tags$a(href="https://github.com/slager/eBirdmass", "R code")," by ",tags$a(href="https://twitter.com/dlslager", "Dave Slager"))
+      p(tags$a(href="https://github.com/slager/eBirdmass", "R code", target="_blank")," by ",tags$a(href="https://twitter.com/dlslager", "Dave Slager", target="_blank"))
     )),
     column(6,
-           htmlOutput("mySite"),
+           h5(htmlOutput("mySite")),
            DT::dataTableOutput("table"),
-           tags$br(),
-           verbatimTextOutput("text"),
-           p("Masses",tags$a(href="https://www.amazon.com/Sibley-Guide-Birds-David-Allen/dp/0679451226","(Sibley 2000)"),"transcribed by Sean Fitzgerald")
+           h5(htmlOutput("coerceX")),
+           h5(htmlOutput("nins")),
+           h5(htmlOutput("metric")),
+           h5(htmlOutput("english")),
+           h5(htmlOutput("pennies")),
+           #verbatimTextOutput("text"),
+           p("Masses",tags$a(href="https://www.amazon.com/Sibley-Guide-Birds-David-Allen/dp/0679451226","(Sibley 2000)", target="_blank"),"transcribed by Sean Fitzgerald")
     )
   )
 )
@@ -157,11 +163,41 @@ server <- function(input, output){
   #output$table <- renderTable({maketablereactive()[['f']]},align='lrrrrrl',include.rownames=FALSE)
   
   output$mySite <- renderUI({
-    tags$a(href = input$text, "View checklist on eBird.org")})
-      
+    tags$a(href = maketablereactive()[['URL']], maketablereactive()[['title']], target="_blank")})
+
+  output$coerceX <- renderUI({
+    tags$p(style="color:red",ifelse(maketablereactive()[['ifX']],"Xs were coerced to 1s",""))
+  })
+  
+  output$nins <- renderUI({
+    tags$p(paste0(format(maketablereactive()[['ni']],big.mark=",")," individuals"),
+           tags$br(),
+           paste0(maketablereactive()[['ns']]," taxa"))
+  })
+  
+  output$metric <- renderUI({
+    tags$p(paste0(format(round(maketablereactive()[['tm']],1),trim=T,big.mark=",",nsmall=1,drop0trailing=T)," grams"),
+           tags$br(),
+           paste0(format(round(maketablereactive()[['tm']]/1000,1),trim=T,big.mark=",",nsmall=1,drop0trailing=T)," kg"),
+           tags$br(),
+           paste0(format(round(maketablereactive()[['tm']]/1e6,1),trim=T,big.mark=",",nsmall=1,drop0trailing=T)," metric tonnes"))
+  })
+  
+  output$english <- renderUI({
+    tags$p(paste0(format(round(maketablereactive()[['tm']]*0.035274,1),trim=T,big.mark=",",nsmall=1,drop0trailing=T)," oz"),
+           tags$br(),
+           paste0(format(round(maketablereactive()[['tm']]*0.00220462,1),trim=T,big.mark=",",nsmall=1,drop0trailing=T)," lb"),
+           tags$br(),
+           paste0(format(round(maketablereactive()[['tm']]*1.10231e-6,1),trim=T,big.mark=",",nsmall=1,drop0trailing=T)," tons"))
+  })
+  
+  output$pennies <- renderUI({
+    tags$p(paste0("$",format(round(maketablereactive()[['tm']]/2.5*.01, 2), nsmall = 2, big.mark=",")," in pennies"))
+  })
+  
   output$text <- renderText({
     paste0(
-          ifelse(maketablereactive()[['ifX']],"Xs were coerced to 1s!\n\n",""),
+          ifelse(maketablereactive()[['ifX']],"Xs were coerced to 1s\n\n",""),
           format(maketablereactive()[['ni']],big.mark=","),
           " individuals\n",
           maketablereactive()[['ns']],
@@ -177,7 +213,7 @@ server <- function(input, output){
           format(round(maketablereactive()[['tm']]*0.00220462,1),trim=T,big.mark=",",nsmall=1,drop0trailing=T),
           " lb\n",    
           format(round(maketablereactive()[['tm']]*1.10231e-6,1),trim=T,big.mark=",",nsmall=1,drop0trailing=T),
-          " tons\n\n",    
+          " tons\n\n",
           "$",format(round(maketablereactive()[['tm']]/2.5*.01, 2), nsmall = 2, big.mark=","),
           " in pennies"
           )
