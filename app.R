@@ -1,5 +1,6 @@
 library(shiny)
 library(rvest)
+library(httr)
 
 ## Define function to scrape, calculate, and generate output data
 maketable <- function(x){
@@ -17,19 +18,30 @@ maketable <- function(x){
     paste("http://ebird.org/ebird/view/checklist?subID=",URL,sep="") -> URL}
     
   ## Scrape eBird Checklist - numbered HTML lines
-  checklist <- paste(capture.output(html(URL), file=NULL))
+  #This method no longer worked when I updated R and rvest
+  #checklist <- paste(capture.output(html(URL), file=NULL))
+
+  #xhtml <- read_html(URL)
+  # Causes error "Peer certificate cannot be authenticated with given CA certificates"
+  #Workaround:
+  #http://stackoverflow.com/questions/34551299/how-to-pass-ssl-verifypeer-in-rvest
+  set_config(config(ssl_verifypeer = 0L))
+  xhtml <- read_html(content(GET(URL), as="text"))
   
-  #Grep and trim the species
-  grep('class="se-name"',checklist) -> i #grep lines of the common names
-  checklist[i] -> species
-  gsub("\t","",species) -> species #trim tabs
-  sub('<h5 class=\"se-name\">',"",species) -> species #trim left tags
-  sub('</h5>',"",species) -> species #trim right
-  #Grep and trim the counts
-  grep('class="se-count"',checklist) -> j #grep lines of the counts
-  checklist[j] -> count
-  sub('<th><h5 class=\"se-count\">',"",count) -> count #trim left
-  sub('</h5></th>',"",count) -> count #trim right
+  species<-html_nodes(x=xhtml,css=".se-name") %>% html_text()
+  count<-html_nodes(x=xhtml,css=".se-count") %>% html_text()
+  
+  ##Grep and trim the species (This longer needed using html_nodes method)
+  # grep('class="se-name"',checklist) -> i #grep lines of the common names
+  # checklist[i] -> species
+  # gsub("\t","",species) -> species #trim tabs
+  # sub('<h5 class=\"se-name\">',"",species) -> species #trim left tags
+  # sub('</h5>',"",species) -> species #trim right
+  # #Grep and trim the counts
+  # grep('class="se-count"',checklist) -> j #grep lines of the counts
+  # checklist[j] -> count
+  # sub('<th><h5 class=\"se-count\">',"",count) -> count #trim left
+  # sub('</h5></th>',"",count) -> count #trim right
   #Evaluate warning for Xs and set Xs = 1
   FALSE -> ifX
   if ("X" %in% count){
@@ -126,7 +138,7 @@ server <- function(input, output){
     
   eventReactive(input$do,{maketable(input$text)}) -> maketablereactive
     
-  output$table <- renderTable({maketablereactive()[['f']]},align='rlrrrrrl',include.rownames=FALSE)
+  output$table <- renderTable({maketablereactive()[['f']]},align='lrrrrrl',include.rownames=FALSE)
   
   output$mySite <- renderUI({
     tags$a(href = input$text, "View checklist on eBird.org")})
