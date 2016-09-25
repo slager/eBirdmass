@@ -3,7 +3,7 @@ library(rvest)
 library(httr)
 library(DT)
 
-## Overarching function to scrape eB checklist and calculate outputs
+### Overarching function to scrape eB checklist and calculate outputs
 maketable <- function(URL){
   ## Grab S# from user input and standardize URL
   regmatches(URL,regexpr("S[0123456789]+",URL,perl=TRUE)) -> S
