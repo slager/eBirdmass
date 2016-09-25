@@ -22,5 +22,5 @@ Sortable data table of taxa, counts, and masses and summary statistics.
 
 ## Authors
 
-* **Dave Slager** - *Coding and development*
-* **Sean Fitzgerald** - *Transcribing masses*
+* **Dave Slager** - *Programming*
+* **Sean Fitzgerald** - *Entering masses*
