@@ -57,6 +57,9 @@ maketable <- function(URL){
       return(tax$PRIMARY_COM_NAME[i])}
   }) -> d$com2
   
+  #Deal with f***ing domestic goose sp. (the only "spuh domestic" in the eB taxonomy)
+  "Domestic goose sp. (Domestic type)" -> d[which(d$com1=="Domestic goose sp. (Domestic type)"),'com2']
+  
   #Add GET_MASS_CODE for com2 to d (later use for matching masses)
   sapply(d$com2,function(x){tax$SPECIES_CODE[which(tax$PRIMARY_COM_NAME==x)]},USE.NAMES=F) -> d$GET_MASS_CODE
   
